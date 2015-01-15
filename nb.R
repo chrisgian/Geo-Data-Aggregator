@@ -4,41 +4,58 @@
 #### set up ####
 
 ## workspace setup
-dir.create('neighborhood.analysis') # create a directory 
-path.folder<-paste(getwd(),'/neighborhood.analysis',sep="") # create folder
-list.of.packages <- c('mailR','tcltk','spdep','dplyr','maptools','foreign')
-new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 
+
+dir.create('neighborhood.analysis') # create a directory 
+
+path.folder      <-paste(getwd(),'/neighborhood.analysis',sep="") # create folder
+
+## install packages
+list.of.packages <- c('mailR', 'tcltk', 'spdep', 'dplyr', 'maptools', 'foreign', 'svDialogs')
+new.packages     <- list.of.packages[!(list.of.packages %in% installed.packages()[, "Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
 ## load packages ##
-require(tcltk)   # pop ups
-require(spdep)   # neighbors
-require(dplyr)   # pipes
+require(tcltk)    # pop ups
+require(spdep)    # neighbors
+require(dplyr)    # pipes
 require(maptools) # read shapefile
-require(foreign) # read dbfs
-
+require(foreign)  # read dbfs
+require(svDialogs)
 ## automation ##
 # function that views data file into workbook 
-
 # dialogue windows
 # reminder to save shapefile
 # reminder to place csv
 
-# input variable 
-
-file <- input.val[1]            # file names
-id.var <- input.val[2]          # id variable
-metric.control <- input.val[3]  # metric name
 
 # transformation 
-post           <- readShapePoly(file.choose(),IDvar = id.var) # read shp
+dlgMessage(paste('a folder has been created:',path.folder))$res
+
+Sys.sleep(5)
+
+
+dlgMessage('select your shapefile')$res
+ # read shp, added a find file option. 
+post           <- readShapePoly(file.choose())
+
+# input: id variable
+dlgMessage("Select an ID variable")$res
+id.var         <- dlgList(names(post), multiple = F)$res
+
+# input: metric
+dlgMessage("Select a Metric")$res
+metric.control <- dlgList(names(post), multiple = F)$res
+
+
 post.nb        <- poly2nb(post)   # find neighbors list
 table          <- nb2mat(post.nb, style = 'B') %>% data.frame  # create table of neighbors
-attributes1    <- read.dbf(paste(path.folder,'/',file,'.dbf',sep=""))$dbf %>% lapply(as.character) %>% data.frame(stringsAsFactors=F)  
+dlgMessage('select your .dbf')$res
+attributes1    <- read.dbf(file.choose()) %>% lapply(as.character) %>% data.frame(stringsAsFactors=F)  
 
 # coerce as dataframe with characters
-attributes2    <- read.csv(paste(path.folder,'/',file,'.csv',sep=""),colClasses='character')  # read csv
+dlgMessage("Select additional attributes CSV")$res
+attributes2    <- read.csv(file.choose(),colClasses='character')  # read csv
 attributes2    <- attributes2 %>% select(c(1,which(metric.control==names(attributes2))))      # grab the selected attribute
 comb           <- left_join(attributes1, attributes2, by = id.var)                            # join two attribute tables
 names(table)   <- row.names(table)          # add names to matrisx
