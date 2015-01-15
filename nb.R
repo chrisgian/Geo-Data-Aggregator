@@ -30,14 +30,9 @@ Sys.sleep(.5)
 post           <- readShapePoly(file.choose())
 
 # input: id variable
-dlgMessage("Select an ID variable")$res # prompt
+id.var         <- dlgList(names(post), multiple = F,title = "Select an ID variable")$res # set id variable
 Sys.sleep(.5)
-id.var         <- dlgList(names(post), multiple = F)$res # set id variable
-Sys.sleep(.5)
-# input: metric
-dlgMessage("Select a Metric")$res
-Sys.sleep(.5)
-metric.control <- dlgList(names(post), multiple = F)$res
+
 
 # comput neighbors
 post.nb        <- poly2nb(post)   # find neighbors list
@@ -49,45 +44,71 @@ Sys.sleep(.5)
 attributes1    <- read.dbf(file.choose()) %>% lapply(as.character) %>% data.frame(stringsAsFactors=F)  
 
 # input csv
-dlgMessage("Select additional attributes CSV")$res
-Sys.sleep(.5)
-attributes2    <- read.csv(file.choose(),colClasses='character')  # read csv
-attributes2    <- attributes2 %>% select(c(1,which(metric.control==names(attributes2))))      # grab the selected attribute
-comb           <- left_join(attributes1, attributes2, by = id.var)                            # join two attribute tables
-names(table)   <- row.names(table)          # add names to matrisx
-idvec          <- names(table)              # create an id vector
 
-# create a matrix of each geoids neighbor metric
-a <- table     %>%     # assign this func chain to 'a'
-  as.matrix    %>%     # transform to matrix to use next
-  sweep(2,as.numeric(as.character(comb[,metric.control])),"*") %>% data.frame  # sweep variables
 
-# transform back into data frame. create a matrix of, filled column wise by row geoid
+attributes2    <- read.csv(file.choose(),colClasses='character') 
 
-b <-comb[,metric.control] %>%           # assign this func chain to 'a'  
-  as.numeric() %>%                      # convert to numeric
-  matrix(dim(comb)[1],dim(comb)[1]) %>% # create calculation matrix
-  data.frame                            # create into dataframe 
+metrics<-names(attributes2)
+# input: metric
 
-c <- abs(b-a)*table                     # take the absolute value of differences.
+joiner<-id.var
 
-e <- c %>%                              # build geoid and metric list
-  rowMeans %>%                          # take row means
-  round(2) %>%                          # round it to two places
-  cbind(row.names(a)) %>%               # bind this with idnames
-  data.frame %>%                        # coerce into dataframe
-  select(c(2,1))                        # reorder
+run <- function(joiner){
+  
+  
+  repeat{# read csv
+  
+    metric.control <- dlgList(metrics, multiple = F,title = "Select an metric")$res
 
-names(e) <- c(id.var,metric.control)    # rename columns
-view(e)                                 # opens spreadsheet  
-
-# plot
-post$metric <- e[,2]                    # inject old metric list into .SHP
-plot(post)                              # plot shapefile
-text(coordinates(post), labels = post$metric, cex = .5)   # add text onto plot
-title(metric.control," Neighborhood Comparison", sub = "Mean Absolute Difference", # add title / sub
-      cex.main = .9,   font.main= 1, col.main= "black",
-      cex.sub = 0.75, font.sub = 1, col.sub = "black")
-
-out.name <- paste(path.folder,'/',file,'.new.dbf',sep="") # print path name
-foreign::write.dbf(comb,out.name)                         # use foreign package to write dbf into dir
+    attributes2    <- attributes2 %>% select(c(1,which(metric.control==names(attributes2))))      # grab the selected attribute
+    comb           <- left_join(attributes1, attributes2, by = joiner)                            # join two attribute tables
+    names(table)   <- row.names(table)          # add names to matrisx
+    idvec          <- names(table)              # create an id vector
+    
+    # create a matrix of each geoids neighbor metric
+    a <- table     %>%     # assign this func chain to 'a'
+      as.matrix    %>%     # transform to matrix to use next
+      sweep(2,as.numeric(as.character(comb[,metric.control])),"*") %>% data.frame  # sweep variables
+    
+    # transform back into data frame. create a matrix of, filled column wise by row geoid
+    
+    b <-comb[,metric.control] %>%           # assign this func chain to 'a'  
+      as.numeric() %>%                      # convert to numeric
+      matrix(dim(comb)[1],dim(comb)[1]) %>% # create calculation matrix
+      data.frame                            # create into dataframe 
+    
+    c <- abs(b-a)*table                     # take the absolute value of differences.
+    
+    e <- c %>%                              # build geoid and metric list
+      rowMeans %>%                          # take row means
+      round(2) %>%                          # round it to two places
+      cbind(row.names(a)) %>%               # bind this with idnames
+      data.frame %>%                        # coerce into dataframe
+      select(c(2,1))                        # reorder
+    
+    names(e) <- c(id.var,metric.control)    # rename columns
+    # plot
+    post$metric <- e[,2]                    # inject old metric list into .SHP
+    plot(post)                              # plot shapefile
+    text(coordinates(post), labels = post$metric, cex = .5)   # add text onto plot
+    title(metric.control," Neighborhood Comparison", sub = "Mean Absolute Difference", # add title / sub
+          cex.main = .9,   font.main= 1, col.main= "black",
+          cex.sub = 0.75, font.sub = 1, col.sub = "black")
+    
+    
+    
+    
+    rand              <-paste(letters[sample(25,1)],sample(9,1),letters[sample(25,1)],sample(9,1),letters[sample(25,1)],sample(9,1),sep="")
+    out.name          <- paste(path.folder,'/',rand,'.new.dbf',sep="") #path
+    comb[is.na(comb)] <-''  # remove na's
+    foreign::write.dbf(comb,out.name) 
+    write.dbf(comb,out.name,factor2char = T)                         # use foreign package to write dbf into dir
+    
+    rerun<-dlgList(c('yes','no'), multiple = F,title = "re-run?")$res
+    Sys.sleep(3)
+   if(rerun=='no'){break}
+    
+  }
+  
+}
+run(joiner)
