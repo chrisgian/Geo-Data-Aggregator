@@ -2,7 +2,6 @@
 # intro: automated neibor analysis from shapefile and data aggregator
 
 #### set up ####
-
 ## workspace setup
 dir.create('neighborhood.analysis') # create a directory 
 path.folder<-paste(getwd(),'/neighborhood.analysis',sep="") # create folder
