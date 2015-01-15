@@ -4,10 +4,7 @@
 #### set up ####
 
 ## workspace setup
-
-
 dir.create('neighborhood.analysis') # create a directory 
-
 path.folder      <-paste(getwd(),'/neighborhood.analysis',sep="") # create folder
 
 ## install packages
@@ -16,45 +13,44 @@ new.packages     <- list.of.packages[!(list.of.packages %in% installed.packages(
 if(length(new.packages)) install.packages(new.packages)
 
 ## load packages ##
-require(tcltk)    # pop ups
 require(spdep)    # neighbors
 require(dplyr)    # pipes
 require(maptools) # read shapefile
 require(foreign)  # read dbfs
-require(svDialogs)
-## automation ##
-# function that views data file into workbook 
-# dialogue windows
-# reminder to save shapefile
-# reminder to place csv
-
+require(svDialogs) # new dialogues
 
 # transformation 
 dlgMessage(paste('a folder has been created:',path.folder))$res
-
-Sys.sleep(5)
+Sys.sleep(1) # slight pause
 
 
 dlgMessage('select your shapefile')$res
+Sys.sleep(.5)
  # read shp, added a find file option. 
 post           <- readShapePoly(file.choose())
 
 # input: id variable
-dlgMessage("Select an ID variable")$res
-id.var         <- dlgList(names(post), multiple = F)$res
-
+dlgMessage("Select an ID variable")$res # prompt
+Sys.sleep(.5)
+id.var         <- dlgList(names(post), multiple = F)$res # set id variable
+Sys.sleep(.5)
 # input: metric
 dlgMessage("Select a Metric")$res
+Sys.sleep(.5)
 metric.control <- dlgList(names(post), multiple = F)$res
 
-
+# comput neighbors
 post.nb        <- poly2nb(post)   # find neighbors list
 table          <- nb2mat(post.nb, style = 'B') %>% data.frame  # create table of neighbors
+
+#Input: dbf
 dlgMessage('select your .dbf')$res
+Sys.sleep(.5)
 attributes1    <- read.dbf(file.choose()) %>% lapply(as.character) %>% data.frame(stringsAsFactors=F)  
 
-# coerce as dataframe with characters
+# input csv
 dlgMessage("Select additional attributes CSV")$res
+Sys.sleep(.5)
 attributes2    <- read.csv(file.choose(),colClasses='character')  # read csv
 attributes2    <- attributes2 %>% select(c(1,which(metric.control==names(attributes2))))      # grab the selected attribute
 comb           <- left_join(attributes1, attributes2, by = id.var)                            # join two attribute tables
