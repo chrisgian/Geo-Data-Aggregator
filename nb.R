@@ -21,7 +21,7 @@ require(svDialogs) # new dialogues
 
 # transformation 
 dlgMessage(paste('a folder has been created:',path.folder))$res
-Sys.sleep(1) # slight pause
+Sys.sleep(.5) # slight pause
 
 
 dlgMessage('select your shapefile')$res
@@ -51,7 +51,7 @@ metrics<-names(attributes2)
 # input: metric
 
 
-attribute.selected<-c(id.var,dlgList(names(attributes2), multiple = T,title = "Select an metric")$res)
+attribute.selected<-c(id.var,dlgList(names(attributes2), multiple = T,title = "Select columns to join")$res)
 
 attributes2    <- attributes2[,attribute.selected] # grab the selected attribute
 comb           <- merge(attributes1, attributes2, by = id.var)                            # join two attribute tables
